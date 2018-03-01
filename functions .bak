@@ -1,0 +1,263 @@
+(function(_, $){
+	"use strict";
+	
+	if(typeof Object.create !== 'function'){
+		Object.create = function(o){
+			var F = function(){};
+			F.prototype = o;
+			return new F();
+		}
+	}
+
+	Function.prototype.method = function(name, func){
+		if(!this.prototype[name]){
+			this.prototype[name] = func;
+			return this;
+		}
+	}
+
+	Function.method('inherits', function (Parent){
+		this.prototype = new Parent();
+		return this;
+	});
+
+	var Field = {x: 3, y: null, accessible: true};
+	
+	function object(o) {
+	    function F() {}
+	    F.prototype = o;
+	    return new F();
+	}
+
+	var field = (function(){
+		var getName = function(){};
+	})();
+
+	var map = (function(){
+	 	//private data
+	 	var initialized = false,
+	 	defaultData = {x: 4, y: 5},
+	 	current = null,
+	 	data = {},
+	 	grid = [],
+	 	moves = [[0,-1], [1,0], [0,1], [-1,0]],
+	 	fieldName = function (x, y){
+			return ""+x+"x"+y;
+		},
+	 	newField = function(x, y){
+			var name = ""+x+"x"+y,			
+			field = {x: x, y: y, accessible: true, name: name};			
+			return field;
+	 	};
+	 	
+	 	return {
+	 		// methods
+	 		getX : function(){
+	 			console.log(data.x);
+	 		},
+	 		getY : function(){
+	 			console.log(data.y);
+	 		},
+	 		printGrid : function(){
+	 			console.log(grid)
+	 		},
+		 	setCurrent : function(field){
+		 		current = field;
+	 		},
+		 	getCurrent : function(field){		 		
+		 		return current;
+	 		},
+	 		move :	function(m){
+	 			current = current['move'][m] || current;
+	 			console.log(current);
+ 			},
+	 		init: function(args){
+	 			data = args || defaultData;	 			
+	 			for (var i = 1; i <= data.x; i++){
+					for (var ii = 1; ii <= data.y; ii++){
+						var field = newField(i, ii);
+						grid[field.name] = field;
+					}
+				}
+				
+				for (var i = 1; i <= data.x; i++){
+					for (var ii = 1; ii <= data.y; ii++){
+						var field = newField(i, ii);
+						var move =[];
+						for (var m = 0; m < moves.length; m++){
+							
+							move[m] = grid[""+(moves[m][0]+i)+"x"+(moves[m][1]+ii)];
+							// console.log(""+(moves[m][0]+i)+"x"+(moves[m][1]+ii));
+						}
+						grid[field.name].move = move;
+						current = grid['1x1'];
+					}
+				}
+	 			return this;
+	 		}
+	 	}
+	})();
+
+	function Map(x, y){
+		
+		var grid = [],
+		blocked = [],
+		moves = [[0,-1], [1,0], [0,1], [-1,0]];
+		
+		this.blocked = blocked;
+		this.now = '2x1';
+		this.newField = newField;
+		this.renderMap = renderMap;
+		this.disable = disable;
+		this.height = x;
+		this.width = y;
+		this.offset = offset;
+		this.renderCurrent = renderCurrent;
+		this.check = check;
+		this.findPath = findPath;
+
+		function disable(arg){
+			if(arg.constructor === String){
+				this.grid[arg].setAccess(false);
+				this.blocked[arg] = arg;
+			}else if(arg.constructor === Array){
+				for(x in arg){
+					this.grid[arg[x]].setAccess(false);
+					this.blocked[arg[x]] = arg;
+				}
+			}
+		}
+
+		function findPath(target, current, visited){
+			if (typeof visited === 'undefined') { visited = []; }
+			if (current.constructor === String){
+
+			} else if (current.constructor === Array){
+				for (x in current){
+
+				}
+			}
+
+		}
+
+		function newField(x, y){
+			var field = {accessible: true};
+			var data = {x: x, y: y, accessible: true};
+			var Field = Object.create(field);
+			Field.getX =  function(){return data.x};
+			Field.isAccessible =  function(){return data.accessible};
+			Field.setAccess =  function(b){data.accessible = b; console.log(data.accessible)};
+			Field.getY = function(){return data.y};
+			return Field;
+		}
+
+		function renderMap(obj){
+			for(var ii = 1; ii <= this.width; ii++){
+				var row = $('<div class="row"></div>');
+				for(var i = 1; i <=this.height; i++){				
+					var name = fieldName(i, ii);
+					var sq = $('<div></div>').addClass('sq').attr('id', name);
+					if(!this.grid[name].isAccessible()) sq.attr('disabled', 'disabled');
+					sq.appendTo(row);
+				}
+				row.appendTo(obj);
+			}
+			$(obj);
+			return false;
+		}
+
+		function fieldName(x, y){
+				return ""+x+"x"+y
+		}
+
+		function offset(x, y){
+			var currentSQ = this.grid[this.now];
+			var newX = currentSQ.x + x, newY = currentSQ.y + y;
+			var newSQ = this.check(fieldName(newX,newY));
+			if(newSQ){
+				this.now = newSQ;
+				this.renderCurrent();
+				console.log([newX, newY])
+			}	
+				return newSQ;
+			// var currentY = this.grid[current].y;
+		}
+
+		function check(fieldName){
+			if( this.grid[fieldName] && this.grid[fieldName].isAccessible()){
+				return fieldName;
+			}else{
+				return false;
+			}		
+			console.log([x, y]);
+		}
+
+		function renderCurrent(){
+			$('.grid .sq').removeClass('current');
+			$('*[id="'+ this.now + '"]').addClass('current');
+		}
+
+		for (var i = 1; i <= x; i++){
+			for (var ii = 1; ii <= y; ii++){
+				
+				grid[fieldName(i,ii)] = newField(i,ii);
+			}
+		}
+
+		this.grid = grid;
+
+	}
+
+	function Path(map, start, end){
+		var deadPool = map.blocked;
+		var paths;
+		this.map = map;
+		this.start = start;
+		this.end = end;
+		this.deadPool = deadPool;
+
+		function find(start, field){
+			if(field.constructor === String){
+				var next = [];
+				for(x in moves){
+					var name = this.map.filedName(moves[x][0] + this.map.grid[start].x, moves[x][1] + this.map.grid[start].y);
+					if(name === field) return 
+					if(this.map.check(name) && !this.deadPool[name]){
+						this.deadPool[name] = name;
+						next.push(name);
+
+					};
+				}
+				find(next)
+			}else if(field.constructor === Array){
+				for(x in field){
+					// this.map.filedName(moves[x][0], moves[x][1]);
+				}
+			}
+		}
+
+		function path(map, options){
+			var path = {};
+			path.history = options.history || [];
+			path.current = options.current || map.now;
+			return [path]
+		}
+
+		function step(current){
+			
+			for(x in moves){
+
+			}
+		}
+	}
+
+	var map3 = Object.create(map).init({x: 400, y: 500});
+
+	var map1 = new Map(4, 5);
+	var map2 = Object.create(map,{data: {x:1, y:2}});
+	map1.disable("1x1");
+	map1.disable(["2x2", "2x3", "2x4", "3x4"])
+	map1.renderMap($('#grid'));
+	map1.renderCurrent();
+
+})(R, jQuery);
